@@ -1,4 +1,4 @@
-package main
+package enconfig
 
 import (
 	"bytes"
@@ -21,23 +21,29 @@ var (
 	credsParsed      bool
 	localEnvironment string
 	localFs          fs.FS
+	keyEnv           = os.Getenv("ENCONFIG_KEY")
 )
 
-func loadKey(dir fs.FS, env string) ([]byte, error) {
-	f, err := dir.Open(fmt.Sprintf(keyFile, env))
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
+func LoadKey(dir fs.FS, env string) ([]byte, error) {
+	var encoded []byte
+	if keyEnv == "" {
+		f, err := dir.Open(fmt.Sprintf(keyFile, env))
+		if err != nil {
+			return nil, err
+		}
+		defer f.Close()
 
-	encoded, err := io.ReadAll(f)
-	if err != nil {
-		return nil, err
+		encoded, err = io.ReadAll(f)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		encoded = []byte(keyEnv)
 	}
 	return base64.StdEncoding.DecodeString(string(encoded))
 }
 
-func readAndDecryptCredentials(dir fs.FS, env string, key []byte) ([]byte, error) {
+func ReadAndDecryptCredentials(dir fs.FS, env string, key []byte) ([]byte, error) {
 	if decrypted != nil {
 		return decrypted, nil
 	}
@@ -58,7 +64,7 @@ func readAndDecryptCredentials(dir fs.FS, env string, key []byte) ([]byte, error
 	return decrypted, err
 }
 
-func encryptAndSaveCredentials(dir fs.FS, env string, data []byte, key []byte) error {
+func EncryptAndSaveCredentials(dir fs.FS, env string, data []byte, key []byte) error {
 	encrypted, err := encrypt(data, key)
 	if err != nil {
 		return err
@@ -88,12 +94,12 @@ func SetFS(f fs.FS) {
 
 func MustGetCredential(key string) string {
 	if !credsParsed {
-		decKey, err := loadKey(localFs, localEnvironment)
+		decKey, err := LoadKey(localFs, localEnvironment)
 		if err != nil {
 			panic(err)
 		}
 
-		creds, err := readAndDecryptCredentials(localFs, localEnvironment, decKey)
+		creds, err := ReadAndDecryptCredentials(localFs, localEnvironment, decKey)
 		if err != nil {
 			panic(err)
 		}

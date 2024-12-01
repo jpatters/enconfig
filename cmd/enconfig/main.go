@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/jpatters/enconfig"
 	"github.com/spf13/cobra"
 )
 
@@ -39,16 +40,16 @@ func init() {
 }
 
 func createConfig(cmd *cobra.Command, args []string) {
-	key, err := generateKey()
+	key, err := enconfig.GenerateKey()
 	if err != nil {
 		log.Fatalf("Error generating key: %v", err)
 	}
 
-	if err := saveKey(key, environment); err != nil {
+	if err := enconfig.SaveKey(key, environment); err != nil {
 		log.Fatalf("Error saving key: %v", err)
 	}
 
-	if err := createEmptyCredentials(environment, key); err != nil {
+	if err := enconfig.CreateEmptyCredentials(environment, key); err != nil {
 		log.Fatalf("Error creating credentials: %v", err)
 	}
 }
@@ -64,13 +65,13 @@ func editConfig(cmd *cobra.Command, args []string) {
 		return
 	}
 	f := os.DirFS(path)
-	key, err := loadKey(f, environment)
+	key, err := enconfig.LoadKey(f, environment)
 	if err != nil {
 		log.Fatalf("Error loading key: %v", err)
 	}
 
 	// Read and decrypt the existing credentials
-	decrypted, err := readAndDecryptCredentials(f, environment, key)
+	decrypted, err := enconfig.ReadAndDecryptCredentials(f, environment, key)
 	if err != nil {
 		log.Fatalf("Error decrypting credentials: %v", err)
 	}
@@ -117,7 +118,7 @@ func editConfig(cmd *cobra.Command, args []string) {
 	}
 
 	// Encrypt and save the modified content
-	if err := encryptAndSaveCredentials(f, environment, modified, key); err != nil {
+	if err := enconfig.EncryptAndSaveCredentials(f, environment, modified, key); err != nil {
 		log.Fatalf("Error saving encrypted credentials: %v", err)
 	}
 }
