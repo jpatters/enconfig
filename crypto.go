@@ -1,4 +1,4 @@
-package enconfig
+package main
 
 import (
 	"crypto/aes"
@@ -12,7 +12,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func GenerateKey() ([]byte, error) {
+func generateKey() ([]byte, error) {
 	key := make([]byte, 32) // 32 bytes for AES-256
 	if _, err := io.ReadFull(rand.Reader, key); err != nil {
 		return nil, err
@@ -20,7 +20,7 @@ func GenerateKey() ([]byte, error) {
 	return key, nil
 }
 
-func SaveKey(key []byte, env string) error {
+func saveKey(key []byte, env string) error {
 	filename := fmt.Sprintf("%s.key", env)
 	encoded := base64.StdEncoding.EncodeToString(key)
 	return os.WriteFile(filename, []byte(encoded), 0600)
@@ -65,7 +65,7 @@ func decrypt(data []byte, key []byte) ([]byte, error) {
 	return gcm.Open(nil, nonce, ciphertext, nil)
 }
 
-func CreateEmptyCredentials(env string, key []byte) error {
+func createEmptyCredentials(env string, key []byte) error {
 	emptyData, err := yaml.Marshal(map[string]interface{}{})
 	if err != nil {
 		return err
