@@ -92,24 +92,40 @@ func SetFS(f fs.FS) {
 	localFs = f
 }
 
-func MustGetCredential(key string) string {
+func loadCreds() error {
 	if !credsParsed {
 		decKey, err := LoadKey(localFs, localEnvironment)
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		creds, err := ReadAndDecryptCredentials(localFs, localEnvironment, decKey)
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		viper.SetConfigType("yaml")
 		r := bytes.NewReader(creds)
 		if err := viper.ReadConfig(r); err != nil {
-			panic(err)
+			return err
 		}
 		credsParsed = true
+	}
+	return nil
+}
+
+func GetCredential(key string) (string, error) {
+	err := loadCreds()
+	if err != nil {
+		return "", err
+	}
+	return viper.GetString(key), nil
+}
+
+func MustGetCredential(key string) string {
+	err := loadCreds()
+	if err != nil {
+		panic(err)
 	}
 	return viper.GetString(key)
 }
